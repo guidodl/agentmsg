@@ -4,6 +4,8 @@ import uuid
 from datetime import datetime, timezone
 
 import redis
+from redis.backoff import ExponentialBackoff
+from redis.retry import Retry
 
 DEFAULT_URL = "redis://localhost:6379"
 REGISTRY_KEY = "agentmsg:agents"
@@ -15,7 +17,12 @@ def _now() -> str:
 
 def get_client(url: str | None = None) -> redis.Redis:
     resolved = url or os.environ.get("AGENTMSG_REDIS_URL") or DEFAULT_URL
-    return redis.Redis.from_url(resolved, decode_responses=True)
+    return redis.Redis.from_url(
+        resolved,
+        decode_responses=True,
+        retry=Retry(ExponentialBackoff(cap=0.5, base=0.05), 3),
+        retry_on_error=[redis.exceptions.ConnectionError, redis.exceptions.TimeoutError],
+    )
 
 
 def inbox_key(agent: str) -> str:

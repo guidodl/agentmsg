@@ -8,6 +8,14 @@ def make_client():
 def test_inbox_key():
     assert core.inbox_key("claude") == "agentmsg:inbox:claude"
 
+def test_get_client_configures_retry():
+    import redis
+    c = core.get_client("redis://localhost:6379")
+    kwargs = c.connection_pool.connection_kwargs
+    assert kwargs["retry"]._retries == 3
+    assert redis.exceptions.ConnectionError in kwargs["retry_on_error"]
+    assert redis.exceptions.TimeoutError in kwargs["retry_on_error"]
+
 def test_touch_and_list_agents():
     c = make_client()
     core.touch_agent(c, "claude")
