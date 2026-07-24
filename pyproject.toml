@@ -1,0 +1,19 @@
+[project]
+name = "agentmsg"
+version = "0.1.0"
+description = "Lightweight cross-agent messaging CLI over local Redis"
+requires-python = ">=3.11"
+dependencies = ["redis>=5.0"]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0", "fakeredis>=2.20"]
+
+[project.scripts]
+agentmsg = "agentmsg.cli:main"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
