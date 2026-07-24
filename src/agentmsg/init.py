@@ -1,3 +1,5 @@
+import os
+
 START = "<!-- agentmsg:start -->"
 END = "<!-- agentmsg:end -->"
 
@@ -14,3 +16,7 @@ You are the **`{name}`** agent. Other AI agents share a local message bus via th
 
 Only send when the user asks you to message another agent. Do not poll in a loop unless explicitly told to.
 {END}"""
+
+
+def resolve_name(explicit: str | None, cwd: str) -> str:
+    return explicit or os.environ.get("AGENTMSG_AGENT") or os.path.basename(cwd)
