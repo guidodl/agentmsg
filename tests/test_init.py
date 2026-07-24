@@ -1,4 +1,12 @@
+import os
+
 from agentmsg import init
+
+def test_skill_source_path_exists():
+    path = init.skill_source_path()
+    assert os.path.isfile(path)
+    assert path.endswith(os.path.join("skill", "SKILL.md"))
+    assert "name: agentmsg" in open(path, encoding="utf-8").read()
 
 def test_render_block_contains_markers_and_name():
     block = init.render_block("copilot")

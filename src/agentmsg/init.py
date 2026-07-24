@@ -18,6 +18,10 @@ Only send when the user asks you to message another agent. Do not poll in a loop
 {END}"""
 
 
+def skill_source_path() -> str:
+    return os.path.join(os.path.dirname(__file__), "skill", "SKILL.md")
+
+
 def resolve_name(explicit: str | None, cwd: str) -> str:
     return explicit or os.environ.get("AGENTMSG_AGENT") or os.path.basename(cwd)
 
