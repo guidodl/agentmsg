@@ -40,3 +40,24 @@ def test_send_with_attachment_includes_it():
     env = core.send_message(c, "claude", "gpt", "plan", {"filename": "plan.md", "content": "# Plan"})
     assert env["attachment"]["filename"] == "plan.md"
     assert env["attachment"]["content"] == "# Plan"
+
+def test_recv_returns_oldest_first():
+    c = make_client()
+    core.send_message(c, "claude", "gpt", "first")
+    core.send_message(c, "claude", "gpt", "second")
+    m1 = core.recv_message(c, "gpt", timeout=1)
+    m2 = core.recv_message(c, "gpt", timeout=1)
+    assert m1["body"] == "first"
+    assert m2["body"] == "second"
+
+def test_recv_timeout_returns_none():
+    c = make_client()
+    assert core.recv_message(c, "nobody", timeout=1) is None
+
+def test_peek_does_not_consume_and_is_oldest_first():
+    c = make_client()
+    core.send_message(c, "claude", "gpt", "first")
+    core.send_message(c, "claude", "gpt", "second")
+    peeked = core.peek_inbox(c, "gpt")
+    assert [m["body"] for m in peeked] == ["first", "second"]
+    assert core.recv_message(c, "gpt", timeout=1)["body"] == "first"

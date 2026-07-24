@@ -55,3 +55,17 @@ def send_message(client, sender: str, to: str, body: str, attachment: dict | Non
     touch_agent(client, sender)
     touch_agent(client, to)
     return env
+
+
+def recv_message(client, agent: str, timeout: int = 5) -> dict | None:
+    touch_agent(client, agent)
+    result = client.brpop(inbox_key(agent), timeout=timeout)
+    if result is None:
+        return None
+    _key, raw = result
+    return json.loads(raw)
+
+
+def peek_inbox(client, agent: str) -> list[dict]:
+    raws = client.lrange(inbox_key(agent), 0, -1)
+    return [json.loads(r) for r in reversed(raws)]
