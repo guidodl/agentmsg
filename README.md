@@ -7,9 +7,21 @@ can participate by name.
 
 ## Setup
 
+Install the CLI:
+
 ```bash
-brew install redis && brew services start redis   # or: docker run -p 6379:6379 redis
 pip install -e .
+```
+
+Then start a Redis for agents to talk through — pick one:
+
+```bash
+# Option A: Homebrew (persistent, runs as a background service)
+brew install redis && brew services start redis
+
+# Option B: Docker (throwaway container, nothing installed on the host)
+docker run -d --name agentmsg-redis -p 6379:6379 redis:7-alpine
+# stop & remove later with: docker rm -f agentmsg-redis
 ```
 
 Redis URL defaults to `redis://localhost:6379`; override with `AGENTMSG_REDIS_URL`.
