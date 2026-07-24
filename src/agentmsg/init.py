@@ -1,4 +1,5 @@
 import os
+import shutil
 
 START = "<!-- agentmsg:start -->"
 END = "<!-- agentmsg:end -->"
@@ -43,3 +44,14 @@ def write_instructions(path: str, name: str) -> None:
         updated = existing + sep + "\n" + block + "\n"
     with open(path, "w", encoding="utf-8") as f:
         f.write(updated)
+
+
+def resolve_skills_dir(explicit: str | None) -> str:
+    return explicit or os.environ.get("CLAUDE_SKILLS_DIR") or os.path.expanduser("~/.claude/skills")
+
+
+def install_skill(skills_dir: str) -> str:
+    dest = os.path.join(skills_dir, "agentmsg")
+    os.makedirs(dest, exist_ok=True)
+    shutil.copyfile(skill_source_path(), os.path.join(dest, "SKILL.md"))
+    return dest

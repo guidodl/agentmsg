@@ -54,3 +54,20 @@ def test_write_replaces_in_place(tmp_path):
     assert "`new`" in text
     assert "`old`" not in text
     assert text.startswith("head")
+
+
+def test_resolve_skills_dir_precedence(monkeypatch, tmp_path):
+    monkeypatch.delenv("CLAUDE_SKILLS_DIR", raising=False)
+    assert init.resolve_skills_dir(str(tmp_path)) == str(tmp_path)
+    monkeypatch.setenv("CLAUDE_SKILLS_DIR", "/env/skills")
+    assert init.resolve_skills_dir(None) == "/env/skills"
+    monkeypatch.delenv("CLAUDE_SKILLS_DIR", raising=False)
+    assert init.resolve_skills_dir(None) == os.path.expanduser("~/.claude/skills")
+
+def test_install_skill_copies_and_overwrites(tmp_path):
+    dest = init.install_skill(str(tmp_path))
+    copied = os.path.join(dest, "SKILL.md")
+    assert os.path.isfile(copied)
+    assert "name: agentmsg" in open(copied, encoding="utf-8").read()
+    init.install_skill(str(tmp_path))  # re-run is clean
+    assert os.path.isfile(copied)
