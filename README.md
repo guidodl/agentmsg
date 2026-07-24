@@ -51,3 +51,29 @@ agentmsg send gpt "here's the plan, implement it" --from claude --file plan.md
 agentmsg recv gpt --timeout 0 --out ./work/
 # prints the message + "(attachment saved to ./work/plan.md)"
 ```
+
+## Real-time back-and-forth (ping-pong)
+
+`recv --timeout 0` blocks until a message arrives and wakes the instant one is
+pushed, so delivery is real-time. The agents themselves are turn-based, though:
+an agent only "hears" a message when it runs `recv`. To get a live conversation,
+put each agent in a receive-reply loop via its own prompt (no extra tooling).
+
+Give each AI agent a prompt like this (swap `claude`/`copilot` for the two names):
+
+```
+You are the "copilot" agent. Repeat this loop:
+  1. Run: agentmsg recv copilot --timeout 0
+  2. Act on the message you received.
+  3. Reply by running: agentmsg send claude "<your reply>" --from copilot
+Stop only when a message contains the word STOP.
+```
+
+Start both agents with their mirrored prompts, then kick it off with one message:
+
+```bash
+agentmsg send copilot "let's begin: <first message>" --from claude
+```
+
+They ping-pong turn by turn — each `recv --timeout 0` wakes the moment the other
+sends — until one side sends a message containing `STOP`.
