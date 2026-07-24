@@ -1,5 +1,6 @@
 import json
 import os
+import uuid
 from datetime import datetime, timezone
 
 import redis
@@ -33,3 +34,24 @@ def list_agents(client) -> list[dict]:
         out.append({"agent": agent, "last_seen": data.get("last_seen", "")})
     out.sort(key=lambda a: a["last_seen"], reverse=True)
     return out
+
+
+def build_envelope(sender: str, to: str, body: str, attachment: dict | None = None) -> dict:
+    env = {
+        "id": str(uuid.uuid4()),
+        "from": sender,
+        "to": to,
+        "body": body,
+        "ts": _now(),
+    }
+    if attachment is not None:
+        env["attachment"] = attachment
+    return env
+
+
+def send_message(client, sender: str, to: str, body: str, attachment: dict | None = None) -> dict:
+    env = build_envelope(sender, to, body, attachment)
+    client.lpush(inbox_key(to), json.dumps(env))
+    touch_agent(client, sender)
+    touch_agent(client, to)
+    return env
