@@ -71,3 +71,27 @@ def test_send_binary_file_rejected(tmp_path, capsys):
     rc = run(["send", "gpt", "x", "--from", "claude", "--file", str(binf)], c)
     assert rc == 1
     assert "text files" in capsys.readouterr().err
+
+def test_recv_out_sanitizes_traversal_filename(tmp_path, capsys):
+    c = fakeredis.FakeStrictRedis(decode_responses=True)
+    env = {"id": "x", "from": "claude", "to": "gpt", "body": "b",
+           "ts": "t", "attachment": {"filename": "../evil.txt", "content": "pwned"}}
+    c.lpush(cli.core.inbox_key("gpt"), json.dumps(env))
+    outdir = tmp_path / "received"
+    run(["recv", "gpt", "--timeout", "1", "--out", str(outdir)], c)
+    assert (outdir / "evil.txt").read_text(encoding="utf-8") == "pwned"
+    assert not (tmp_path / "evil.txt").exists()
+
+def test_malformed_redis_url_is_friendly(monkeypatch, capsys):
+    monkeypatch.setenv("AGENTMSG_REDIS_URL", "not-a-valid-url")
+    rc = cli.main(["agents"])
+    assert rc == 1
+    assert "cannot reach Redis" in capsys.readouterr().err
+
+def test_agents_json(capsys):
+    c = fakeredis.FakeStrictRedis(decode_responses=True)
+    run(["send", "gpt", "hi", "--from", "claude"], c)
+    run(["agents", "--json"], c)
+    data = json.loads(capsys.readouterr().out)
+    names = {a["agent"] for a in data}
+    assert names == {"claude", "gpt"}

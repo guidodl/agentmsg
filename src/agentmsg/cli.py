@@ -32,7 +32,8 @@ def _build_parser() -> argparse.ArgumentParser:
     pk.add_argument("me")
     pk.add_argument("--json", action="store_true")
 
-    sub.add_parser("agents", help="List known agents")
+    ag = sub.add_parser("agents", help="List known agents")
+    ag.add_argument("--json", action="store_true")
     return p
 
 
@@ -45,7 +46,7 @@ def _print_message(env: dict, as_json: bool, out_dir: str | None) -> None:
     if att:
         if out_dir:
             os.makedirs(out_dir, exist_ok=True)
-            path = os.path.join(out_dir, att["filename"])
+            path = os.path.join(out_dir, os.path.basename(att["filename"]))
             with open(path, "w", encoding="utf-8") as f:
                 f.write(att["content"])
             print(f"(attachment saved to {path})")
@@ -74,7 +75,7 @@ def main(argv: list[str] | None = None, _client=None) -> int:
     args = _build_parser().parse_args(argv)
     try:
         client = _client if _client is not None else core.get_client()
-    except redis.RedisError:
+    except (redis.RedisError, ValueError):
         print(_redis_error_msg(), file=sys.stderr)
         return 1
 
@@ -101,8 +102,12 @@ def main(argv: list[str] | None = None, _client=None) -> int:
                     print(f"[{env['from']}] {env['body']}")
             return 0
         if args.command == "agents":
-            for a in core.list_agents(client):
-                print(f"{a['agent']}\t{a['last_seen']}")
+            agents = core.list_agents(client)
+            if args.json:
+                print(json.dumps(agents))
+            else:
+                for a in agents:
+                    print(f"{a['agent']}\t{a['last_seen']}")
             return 0
     except (FileNotFoundError, ValueError) as e:
         print(str(e), file=sys.stderr)
