@@ -38,3 +38,36 @@ def test_recv_json_outputs_envelope(capsys):
     out = capsys.readouterr().out
     env = json.loads(out)
     assert env["body"] == "hello" and env["from"] == "claude"
+
+def test_send_file_roundtrip_inline(tmp_path, capsys):
+    c = fakeredis.FakeStrictRedis(decode_responses=True)
+    plan = tmp_path / "plan.md"
+    plan.write_text("# Plan\nstep 1", encoding="utf-8")
+    run(["send", "gpt", "do this", "--from", "claude", "--file", str(plan)], c)
+    run(["recv", "gpt", "--timeout", "1"], c)
+    out = capsys.readouterr().out
+    assert "plan.md" in out and "# Plan" in out
+
+def test_recv_out_writes_file(tmp_path, capsys):
+    c = fakeredis.FakeStrictRedis(decode_responses=True)
+    plan = tmp_path / "plan.md"
+    plan.write_text("# Plan", encoding="utf-8")
+    run(["send", "gpt", "do this", "--from", "claude", "--file", str(plan)], c)
+    outdir = tmp_path / "received"
+    run(["recv", "gpt", "--timeout", "1", "--out", str(outdir)], c)
+    saved = outdir / "plan.md"
+    assert saved.read_text(encoding="utf-8") == "# Plan"
+
+def test_send_missing_file_errors(capsys):
+    c = fakeredis.FakeStrictRedis(decode_responses=True)
+    rc = run(["send", "gpt", "x", "--from", "claude", "--file", "/no/such/file.md"], c)
+    assert rc == 1
+    assert "not found" in capsys.readouterr().err
+
+def test_send_binary_file_rejected(tmp_path, capsys):
+    c = fakeredis.FakeStrictRedis(decode_responses=True)
+    binf = tmp_path / "blob.bin"
+    binf.write_bytes(b"\xff\xfe\x00\x01\x80")
+    rc = run(["send", "gpt", "x", "--from", "claude", "--file", str(binf)], c)
+    assert rc == 1
+    assert "text files" in capsys.readouterr().err
