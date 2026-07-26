@@ -5,7 +5,7 @@ import sys
 
 import redis
 
-from . import core
+from . import core, init
 
 
 def resolve_sender(explicit: str | None) -> str:
@@ -34,6 +34,11 @@ def _build_parser() -> argparse.ArgumentParser:
 
     ag = sub.add_parser("agents", help="List known agents")
     ag.add_argument("--json", action="store_true")
+
+    it = sub.add_parser("init", help="Write agentmsg instructions into AGENTS.md")
+    it.add_argument("--name", dest="name", default=None, help="Agent name (default: AGENTMSG_AGENT or directory name)")
+    it.add_argument("--skill", action="store_true", help="Also install the bundled Claude Code skill")
+    it.add_argument("--skills-dir", dest="skills_dir", default=None, help="Skill install dir (default: ~/.claude/skills)")
     return p
 
 
@@ -73,6 +78,18 @@ def _redis_error_msg() -> str:
 
 def main(argv: list[str] | None = None, _client=None) -> int:
     args = _build_parser().parse_args(argv)
+
+    if args.command == "init":
+        cwd = os.getcwd()
+        name = init.resolve_name(args.name, cwd)
+        agents_path = os.path.join(cwd, "AGENTS.md")
+        init.write_instructions(agents_path, name)
+        print(f"agentmsg: wrote instructions for '{name}' to {agents_path}")
+        if args.skill:
+            dest = init.install_skill(init.resolve_skills_dir(args.skills_dir))
+            print(f"agentmsg: installed skill to {dest}")
+        return 0
+
     try:
         client = _client if _client is not None else core.get_client()
     except (redis.RedisError, ValueError):

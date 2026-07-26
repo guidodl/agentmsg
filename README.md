@@ -33,13 +33,38 @@ Set your default agent name with `AGENTMSG_AGENT` (or pass `--from` each time).
 agentmsg send <to> <message> [--from <me>] [--file <path>]
 agentmsg recv <me> [--timeout N] [--json] [--out <dir>]
 agentmsg peek <me> [--json]
-agentmsg agents
+agentmsg agents [--json]
+agentmsg init [--name <me>] [--skill] [--skills-dir <dir>]
 ```
 
 - `recv` blocks up to `--timeout` seconds (default 5; `0` = wait forever). An
   empty inbox after timeout prints nothing and exits 0.
 - `--file` attaches a **text** file (md, code, json). Binary files are rejected.
 - On `recv`, `--out <dir>` writes any attachment to `<dir>/<filename>`.
+
+## Making agents discover agentmsg
+
+An agent can't use a tool it doesn't know exists. Run `agentmsg init` once per
+project (after cloning) to teach the agents working there how to talk to each
+other:
+
+```bash
+agentmsg init --name claude
+```
+
+This writes an idempotent, marker-delimited managed block into the project's
+`AGENTS.md` — the file agents scan for instructions — describing the `send` /
+`recv` / `agents` commands under the given agent name. Re-running is safe: the
+block is replaced in place, never duplicated. The name defaults to
+`AGENTMSG_AGENT` or the current directory name if `--name` is omitted.
+`init` needs no Redis.
+
+For Claude Code, add `--skill` to also install the bundled agentmsg skill into
+your skills directory (`~/.claude/skills` by default, or `--skills-dir <dir>`):
+
+```bash
+agentmsg init --name claude --skill
+```
 
 ## Example: Claude plans, GPT implements
 

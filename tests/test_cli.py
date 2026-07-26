@@ -95,3 +95,20 @@ def test_agents_json(capsys):
     data = json.loads(capsys.readouterr().out)
     names = {a["agent"] for a in data}
     assert names == {"claude", "gpt"}
+
+def test_init_writes_agents_md(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    assert cli.main(["init", "--name", "claude"]) == 0
+    text = (tmp_path / "AGENTS.md").read_text(encoding="utf-8")
+    assert "agentmsg" in text and "claude" in text
+
+def test_init_needs_no_redis(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("AGENTMSG_REDIS_URL", "not-a-valid-url")
+    assert cli.main(["init", "--name", "claude"]) == 0
+
+def test_init_skill_installs(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    skills = tmp_path / "skills"
+    assert cli.main(["init", "--name", "claude", "--skill", "--skills-dir", str(skills)]) == 0
+    assert (skills / "agentmsg" / "SKILL.md").is_file()
