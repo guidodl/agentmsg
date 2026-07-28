@@ -102,3 +102,19 @@ agentmsg send copilot "let's begin: <first message>" --from claude
 
 They ping-pong turn by turn — each `recv --timeout 0` wakes the moment the other
 sends — until one side sends a message containing `STOP`.
+
+## Brainstorm to convergence (bundled skill)
+
+The raw ping-pong above works, but naive loops stall, converge prematurely, or
+hallucinate when a message is dropped. `skills/multi-agent-brainstorm/` bundles an
+agent-agnostic skill that drives two agents to debate a topic until they agree,
+with a neutral driver that owns turn-taking, verifies each message was delivered,
+and judges convergence. Run its loop directly:
+
+```bash
+TOPIC="Design a rate limiter, fair across tenants." \
+  skills/multi-agent-brainstorm/scripts/brainstorm.sh
+```
+
+See `skills/multi-agent-brainstorm/SKILL.md` for the guards and how to point it at
+a different message bus or agent runner.
