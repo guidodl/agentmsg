@@ -45,7 +45,7 @@ TOPIC="Design a rate limiter for an API gateway, fair across tenants." \
   ./scripts/brainstorm.sh
 ```
 
-Override via env: `MODEL`, `MAX_ROUNDS`, `AGENT_A`/`AGENT_B`, or `RUN_AGENT` (a launch template for a non-default runner — it receives `$AGENT` and `$PROMPT`).
+Override via env: `MODEL`, `MAX_ROUNDS`, `AGENT_A`/`AGENT_B`, `RUN_ID` (a suffix isolating agent inboxes so concurrent runs don't collide — defaults to the script's PID), or `RUN_AGENT` (a launch template for a non-default runner — it receives `$AGENT` and `$PROMPT`).
 
 ## How the Loop Works
 

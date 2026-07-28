@@ -18,7 +18,9 @@
 #   TOPIC            the problem to brainstorm (required)
 #   MODEL            runner model id            (default: headroom/anthropic/claude-sonnet-4-6)
 #   MAX_ROUNDS       hard turn cap              (default: 6)
-#   AGENT_A AGENT_B  agent names                (default: architect / critic)
+#   AGENT_A AGENT_B  agent base names           (default: architect / critic)
+#   RUN_ID           run-isolation suffix on agent names, so concurrent runs
+#                    don't share inboxes         (default: this script's PID)
 #   RUN_AGENT        template to launch one agent turn; sees $AGENT and $PROMPT
 #                    (default: opencode run --model "$MODEL" "$PROMPT")
 set -u
@@ -26,8 +28,9 @@ set -u
 TOPIC="${TOPIC:?set TOPIC to the problem to brainstorm}"
 MODEL="${MODEL:-headroom/anthropic/claude-sonnet-4-6}"
 MAX_ROUNDS="${MAX_ROUNDS:-6}"
-A="${AGENT_A:-architect}"
-B="${AGENT_B:-critic}"
+RUN_ID="${RUN_ID:-$$}"
+A="${AGENT_A:-architect}-${RUN_ID}"
+B="${AGENT_B:-critic}-${RUN_ID}"
 MARKER="DESIGN-FINAL"
 
 # Launch one agent turn. Override RUN_AGENT for a different runner.
